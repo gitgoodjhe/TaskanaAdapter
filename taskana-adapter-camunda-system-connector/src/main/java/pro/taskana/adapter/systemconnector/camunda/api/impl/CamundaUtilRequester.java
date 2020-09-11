@@ -15,6 +15,10 @@ public class CamundaUtilRequester {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CamundaUtilRequester.class);
 
+  private CamundaUtilRequester() {
+    throw new IllegalStateException("Utility class");
+  }
+
   public static boolean isTaskNotExisting(
       HttpHeaderProvider httpHeaderProvider,
       RestTemplate restTemplate,

@@ -59,6 +59,7 @@
                 <version.jboss-as-maven-plugin>7.9.Final</version.jboss-as-maven-plugin>
 
                 <version.assertj>3.16.1</version.assertj>
+                <version.awaitility>3.1.6</version.awaitility>
                 <version.junit.jupiter>5.6.2</version.junit.jupiter>
                 <version.hamcrest.json>0.2</version.hamcrest.json>
 

@@ -1,22 +1,31 @@
 package pro.taskana.adapter.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.verify;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.util.List;
+import org.awaitility.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 
+import pro.taskana.adapter.impl.TaskanaTaskStarter;
+import pro.taskana.adapter.systemconnector.camunda.api.impl.CamundaTaskClaimCanceler;
+import pro.taskana.adapter.systemconnector.camunda.api.impl.CamundaTaskClaimer;
 import pro.taskana.adapter.systemconnector.camunda.api.impl.CamundaUtilRequester;
 import pro.taskana.adapter.test.TaskanaAdapterTestApplication;
 import pro.taskana.security.JaasExtension;
@@ -35,6 +44,12 @@ import pro.taskana.task.api.models.TaskSummary;
 @ExtendWith(JaasExtension.class)
 @ContextConfiguration
 class TestTaskClaim extends AbsIntegrationTest {
+
+  @SpyBean CamundaTaskClaimer camundaTaskClaimer;
+
+  @SpyBean CamundaTaskClaimCanceler camundaTaskClaimerCanceler;
+
+  @SpyBean TaskanaTaskStarter taskanaTaskStarter;
 
   @WithAccessId(
       userName = "teamlead_1",
@@ -272,7 +287,13 @@ class TestTaskClaim extends AbsIntegrationTest {
     List<String> camundaTaskIds =
         this.camundaProcessengineRequester.getTaskIdsFromProcessInstanceId(processInstanceId);
 
-    Thread.sleep((long) (this.adapterTaskPollingInterval * 1.2));
+    await()
+        .untilAsserted(
+            () ->
+                verify(
+                        taskanaTaskStarter,
+                        after(adapterTaskPollingInterval).times(camundaTaskIds.size()))
+                    .createTaskanaTask(any(), any(), any()));
 
     for (String camundaTaskId : camundaTaskIds) {
 
@@ -294,8 +315,12 @@ class TestTaskClaim extends AbsIntegrationTest {
       TaskState updatedTaskState = this.taskService.getTask(taskanaTaskId).getState();
       assertThat(updatedTaskState).isEqualTo(TaskState.CLAIMED);
 
-      // wait for the adapter to claim the not anymore existing camunda task
-      Thread.sleep((long) (this.adapterTaskPollingInterval * 1.2));
+      // wait for the adapter to try to claim the not anymore existing camunda task
+      await()
+          .untilAsserted(
+              () ->
+                  verify(camundaTaskClaimer, after(adapterClaimPollingInterval).times(1))
+                      .claimCamundaTask(any(), any()));
 
       List<ILoggingEvent> logsList = listAppender.list;
 
@@ -331,7 +356,13 @@ class TestTaskClaim extends AbsIntegrationTest {
     List<String> camundaTaskIds =
         this.camundaProcessengineRequester.getTaskIdsFromProcessInstanceId(processInstanceId);
 
-    Thread.sleep((long) (this.adapterTaskPollingInterval * 1.2));
+    await()
+        .untilAsserted(
+            () ->
+                verify(
+                        taskanaTaskStarter,
+                        after(adapterTaskPollingInterval).times(camundaTaskIds.size()))
+                    .createTaskanaTask(any(), any(), any()));
 
     for (String camundaTaskId : camundaTaskIds) {
 
@@ -347,7 +378,13 @@ class TestTaskClaim extends AbsIntegrationTest {
       this.taskService.claim(taskanaTaskId);
       TaskState updatedTaskState = this.taskService.getTask(taskanaTaskId).getState();
       assertThat(updatedTaskState).isEqualTo(TaskState.CLAIMED);
-      Thread.sleep((long) (this.adapterClaimPollingInterval * 1.2));
+
+      await()
+          .pollDelay(Duration.ONE_SECOND)
+          .untilAsserted(
+              () ->
+                  verify(camundaTaskClaimer, after(adapterClaimPollingInterval).times(1))
+                      .claimCamundaTask(any(), any()));
 
       // verify updated assignee for camunda task
       boolean assigneeSetSuccessfully =
@@ -365,7 +402,14 @@ class TestTaskClaim extends AbsIntegrationTest {
       assertThat(taskWithCancelledClaimState).isEqualTo(TaskState.READY);
 
       // wait for the adapter to try to cancel claim the not anymore existing camunda task
-      Thread.sleep((long) (this.adapterTaskPollingInterval * 1.2));
+      await()
+          .pollDelay(Duration.ONE_SECOND)
+          .untilAsserted(
+              () ->
+                  verify(
+                          camundaTaskClaimerCanceler,
+                          after(adapterCancelledClaimPollingInterval).times(1))
+                      .cancelClaimOfCamundaTask(any(), any()));
 
       List<ILoggingEvent> logsList = listAppender.list;
 
