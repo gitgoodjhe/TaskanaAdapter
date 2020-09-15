@@ -68,6 +68,7 @@ public class CamundaProcessengineRequester {
             + PROCESS_DEFINITION_START_PATH;
     HttpEntity<String> requestEntity = prepareEntityFromBody("{" + variables + "}");
 
+    System.out.println("### in requester " + restTemplate.getRootUri());
     ResponseEntity<String> answer =
         restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
     JSONObject processJson = new JSONObject(answer.getBody());

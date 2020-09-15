@@ -67,7 +67,7 @@ public abstract class AbsIntegrationTest {
 
   protected TaskService taskService;
 
-  @Autowired private TestRestTemplate restTemplate;
+  @Autowired protected TestRestTemplate restTemplate;
 
   @Autowired private ProcessEngineConfiguration processEngineConfiguration;
 
@@ -101,6 +101,7 @@ public abstract class AbsIntegrationTest {
     this.camundaProcessengineRequester =
         new CamundaProcessengineRequester(
             this.processEngineConfiguration.getProcessEngineName(), this.restTemplate);
+    System.out.println("#######set the templae");
     this.taskService = taskanaEngine.getTaskService();
 
     // adjust polling interval, give adapter a little more time

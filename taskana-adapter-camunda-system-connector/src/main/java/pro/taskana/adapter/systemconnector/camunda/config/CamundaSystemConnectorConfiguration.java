@@ -31,6 +31,7 @@ public class CamundaSystemConnectorConfiguration {
   @Bean
   CamundaSystemUrls camundaSystemUrls(
       @Value("${taskana-system-connector-camundaSystemURLs}") final String strUrls) {
+    System.out.println("SYSTEMURLS");
     return new CamundaSystemUrls(strUrls);
   }
 

@@ -5,10 +5,19 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
+import javax.annotation.PostConstruct;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.client.TestRestTemplate.HttpClientOption;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import pro.taskana.adapter.test.TaskanaAdapterTestApplication;
@@ -23,7 +32,7 @@ import pro.taskana.task.api.models.TaskSummary;
  */
 @SpringBootTest(
     classes = TaskanaAdapterTestApplication.class,
-    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+    webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @ExtendWith(JaasExtension.class)
 @ContextConfiguration
@@ -33,6 +42,7 @@ class TestTaskClaim extends AbsIntegrationTest {
       userName = "teamlead_1",
       groupNames = {"admin"})
   @Test
+  @DirtiesContext
   void claim_of_taskana_task_should_claim_unclaimed_camunda_task() throws Exception {
 
     String processInstanceId =
@@ -80,6 +90,7 @@ class TestTaskClaim extends AbsIntegrationTest {
       userName = "teamlead_1",
       groupNames = {"admin"})
   @Test
+  @DirtiesContext
   void claim_of_taskana_task_should_claim_already_claimed_camunda_task() throws Exception {
 
     String processInstanceId =
@@ -127,6 +138,7 @@ class TestTaskClaim extends AbsIntegrationTest {
       userName = "teamlead_1",
       groupNames = {"admin"})
   @Test
+  @DirtiesContext
   void cancel_claim_of_taskana_task_should_cancel_claim_of_camunda_task() throws Exception {
 
     String processInstanceId =
@@ -181,6 +193,7 @@ class TestTaskClaim extends AbsIntegrationTest {
       userName = "teamlead_1",
       groupNames = {"admin"})
   @Test
+  @DirtiesContext
   void claim_of_taskana_task_after_cancel_claim_should_claim_task_in_camunda_again()
       throws Exception {
 
@@ -243,4 +256,7 @@ class TestTaskClaim extends AbsIntegrationTest {
       assertTrue(assigneeSetSuccessfullyAgain);
     }
   }
+  @DirtiesContext
+  @DirtiesContext
+              () -> verify(camundaTaskClaimerCanceler.cancelClaimOfCamundaTask(any(), any())));
 }

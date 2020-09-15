@@ -70,6 +70,8 @@ public class CamundaTaskRetriever {
     HttpHeaders headers = httpHeaderProvider.getHttpHeadersForOutboxRestApi();
     LOGGER.debug(
         "retrieving camunda task event resources with url {} and headers {}", requestUrl, headers);
+
+    System.out.println("uri in taskretriever: " + camundaSystemTaskEventUrl);
     ResponseEntity<CamundaTaskEventListResource> responseEntity =
         restTemplate.exchange(
             requestUrl,
