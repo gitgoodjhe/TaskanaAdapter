@@ -21,6 +21,15 @@ public interface SystemConnector {
   void taskanaTasksHaveBeenCreatedForNewReferencedTasks(List<ReferencedTask> referencedTasks);
 
   /**
+   * With this call the Adapter notifies the SystemConnector that a list of TASKANA tasks has failed
+   * to be created. Depending on the Implementation of the SystemConnector, it may ignore this call.
+   *
+   * @param failedCreationTaskIds List of ReferencedTasksIds for which TASKANA tasks failed to be
+   *     created
+   */
+  void taskanaTasksFailedToBeCreatedForNewReferencedTasks(List<String> failedCreationTaskIds);
+
+  /**
    * Retrieve ReferencedTasks that were finished.
    *
    * @return a list of ReferencedTasks that were finished

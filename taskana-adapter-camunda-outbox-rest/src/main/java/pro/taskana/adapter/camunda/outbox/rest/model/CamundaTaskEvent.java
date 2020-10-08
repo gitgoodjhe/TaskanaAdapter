@@ -11,6 +11,8 @@ public class CamundaTaskEvent implements Serializable {
   String type;
   String created;
   String payload;
+  int remainingRetries;
+  String blockedUntil;
 
   public int getId() {
     return id;
@@ -44,19 +46,36 @@ public class CamundaTaskEvent implements Serializable {
     this.payload = payload;
   }
 
+  public int getRemainingRetries() {
+    return remainingRetries;
+  }
+
+  public void setRemainingRetries(int remainingRetries) {
+    this.remainingRetries = remainingRetries;
+  }
+
+  public String getBlockedUntil() {
+    return blockedUntil;
+  }
+
+  public void setBlockedUntil(String blockedUntil) {
+    this.blockedUntil = blockedUntil;
+  }
+
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder
-        .append("CamundaTaskEventResource [id=")
-        .append(id)
-        .append(", type=")
-        .append(type)
-        .append(", created=")
-        .append(created)
-        .append(", payload=")
-        .append(payload)
-        .append("]");
-    return builder.toString();
+    return "CamundaTaskEvent [id="
+               + id
+               + ", type="
+               + type
+               + ", created="
+               + created
+               + ", payload="
+               + payload
+               + ", remainingRetries="
+               + remainingRetries
+               + ", blockedUntil="
+               + blockedUntil
+               + "]";
   }
 }

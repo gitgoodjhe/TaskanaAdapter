@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ import spinjar.com.fasterxml.jackson.databind.ObjectMapper;
 
 import pro.taskana.adapter.camunda.TaskanaConfigurationProperties;
 import pro.taskana.adapter.camunda.outbox.rest.model.CamundaTaskEvent;
+import pro.taskana.adapter.camunda.util.ReadPropertiesHelper;
 
 /** Implementation of the Outbox REST service. */
 public class CamundaTaskEventsService implements TaskanaConfigurationProperties {
@@ -36,11 +39,26 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
 
   private static final String OUTBOX_SCHEMA = getSchemaFromProperties();
   private static final String SQL_GET_CREATE_EVENTS =
-      "select * from %s.event_store where type = ? fetch first %d rows only";
+      "select * from %s.event_store where type = ? "
+          + "and remaining_retries>0 and blocked_until < '%s' fetch first %d rows only";
   private static final String SQL_GET_COMPLETE_AND_DELETE_EVENTS =
       "select * from %s.event_store where type = ? OR type = ? fetch first %d rows only";
+  private static final String SQL_GET_BLACKLISTED_EVENTS =
+      "select * from %s.event_store where remaining_retries<=0";
+  private static final String SQL_GET_BLACKLISTED_EVENTS_COUNT =
+      "select count(id) from %s.event_store where remaining_retries<=0";
   private static final String SQL_WITHOUT_PLACEHOLDERS_DELETE_EVENTS =
       "delete from %s.event_store where id in (%s)";
+  private static final String SQL_DECREASE_REMAINING_RETRIES =
+      "update %s.event_store set remaining_retries = remaining_retries-1, blocked_until = '%s' where id in (%s)";
+  private static final String SQL_SET_REMAINING_RETRIES =
+      "update %s.event_store set remaining_retries = %d where id = %d";
+  private static final String SQL_SET_REMAINING_RETRIES_FOR_ALL_BLACKLISTED_EVENTS =
+      "update %s.event_store set remaining_retries = %d where remaining_retries=0";
+  private static final String SQL_DELETE_BLACKLISTED_EVENT =
+      "delete from %s.event_store where id = %d and remaining_retries <=0";
+  private static final String SQL_DELETE_ALL_BLACKLISTED_EVENTS =
+      "delete from %s.event_store where remaining_retries <= 0 ";
   private static final int MAX_NUMBER_OF_EVENTS_DEFAULT = 50;
 
   private static Properties outboxProperties;
@@ -103,6 +121,8 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
             OUTBOX_SCHEMA,
             preparePlaceHolders(idsAsIntegers.size()));
 
+    System.out.println("###entered delete with ids " + idsAsIntegers);
+
     try (Connection connection = getConnection()) {
 
       PreparedStatement preparedStatement =
@@ -114,6 +134,159 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
     } catch (Exception e) {
       LOGGER.warn("Caught Exception while trying to delete events from the outbox table", e);
     }
+  }
+
+  public void decreaseRemainingRetries(String idsAsJsonArray) {
+
+    List<Integer> idsAsIntegers = getIdsAsIntegers(idsAsJsonArray);
+
+    String blockedUntil = getBlockedUntil();
+
+    String decreaseRemainingRetriesSqlWithPlaceholdersSql =
+        String.format(
+            SQL_DECREASE_REMAINING_RETRIES,
+            OUTBOX_SCHEMA,
+            blockedUntil,
+            preparePlaceHolders(idsAsIntegers.size()));
+
+    try (Connection connection = getConnection();
+        PreparedStatement preparedStatement =
+            connection.prepareStatement(decreaseRemainingRetriesSqlWithPlaceholdersSql)) {
+
+      setPreparedStatementValues(preparedStatement, idsAsIntegers);
+      preparedStatement.execute();
+
+    } catch (Exception e) {
+      LOGGER.warn(
+          "Caught Exception while trying to decrease the remaining retries of camunda task events",
+          e);
+    }
+  }
+
+  public List<CamundaTaskEvent> getBlacklistedEvents() {
+
+    List<CamundaTaskEvent> blacklistedCamundaTaskEvents = new ArrayList<>();
+
+    String getBlacklistedEventsSql = String.format(SQL_GET_BLACKLISTED_EVENTS, OUTBOX_SCHEMA);
+
+    try (Connection connection = getConnection();
+        PreparedStatement preparedStatement =
+            connection.prepareStatement(getBlacklistedEventsSql)) {
+
+      ResultSet blacklistedCamundaTaskEventResultSet = preparedStatement.executeQuery();
+      blacklistedCamundaTaskEvents = getCamundaTaskEvents(blacklistedCamundaTaskEventResultSet);
+
+    } catch (Exception e) {
+      LOGGER.warn(
+          "Caught Exception while trying to retrieve blacklisted events from the outbox", e);
+    }
+    return blacklistedCamundaTaskEvents;
+  }
+
+  public int getBlacklistedEventsCount() {
+
+    int blacklistedEventsCount = 0;
+
+    String getBlacklistedEventsCountSql =
+        String.format(SQL_GET_BLACKLISTED_EVENTS_COUNT, OUTBOX_SCHEMA);
+
+    try (Connection connection = getConnection();
+        PreparedStatement preparedStatement =
+            connection.prepareStatement(getBlacklistedEventsCountSql)) {
+
+      ResultSet camundaTaskEventResultSet = preparedStatement.executeQuery();
+      if (camundaTaskEventResultSet.next()) {
+        blacklistedEventsCount = camundaTaskEventResultSet.getInt(1);
+      }
+
+    } catch (Exception e) {
+      LOGGER.warn(
+          "Caught Exception while trying to retrieve blacklisted events count from the outbox", e);
+    }
+    return blacklistedEventsCount;
+  }
+
+  public void setRemainingRetries(int id, String remainingRetries) {
+
+    List<CamundaTaskEvent> events = getCreateEvents();
+    List<CamundaTaskEvent> event = getCreateEvents().stream().filter(camundaTaskEvent -> camundaTaskEvent.getId()==id).collect(Collectors.toList());
+
+    System.out.println("#####" + event);
+    System.out.println("#####" + events);
+
+    String setRemainingRetriesSql =
+        String.format(SQL_SET_REMAINING_RETRIES, OUTBOX_SCHEMA, 3, id);
+
+    try (Connection connection = getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(setRemainingRetriesSql)) {
+
+      preparedStatement.execute();
+
+    } catch (Exception e) {
+      LOGGER.warn(
+          "Caught Exception while trying to set remaining retries for camunda task event", e);
+    }
+  }
+
+  public void setRemainingRetriesForAllBlacklisted(int retries) {
+
+    String setRemainingRetriesForAllBlacklistedSql =
+        String.format(SQL_SET_REMAINING_RETRIES_FOR_ALL_BLACKLISTED_EVENTS, OUTBOX_SCHEMA, retries);
+
+    try (Connection connection = getConnection();
+        PreparedStatement preparedStatement =
+            connection.prepareStatement(setRemainingRetriesForAllBlacklistedSql)) {
+
+      preparedStatement.execute();
+
+    } catch (Exception e) {
+      LOGGER.warn(
+          "Caught Exception while trying to set remaining retries for all blacklisted camunda task events",
+          e);
+    }
+  }
+
+  public void deleteBacklistedEvent(int id) {
+
+    String deleteBlacklistedEventSql =
+        String.format(SQL_DELETE_BLACKLISTED_EVENT, OUTBOX_SCHEMA, id);
+
+    try (Connection connection = getConnection();
+        PreparedStatement preparedStatement =
+            connection.prepareStatement(deleteBlacklistedEventSql)) {
+
+      preparedStatement.execute();
+
+    } catch (Exception e) {
+      LOGGER.warn("Caught Exception while trying to delete blacklisted camunda task event", e);
+    }
+  }
+
+  public void deleteAllBacklistedEvents() {
+
+    String flagEventsSqlWithPlaceholders =
+        String.format(SQL_DELETE_ALL_BLACKLISTED_EVENTS, OUTBOX_SCHEMA);
+
+    try (Connection connection = getConnection();
+        PreparedStatement preparedStatement =
+            connection.prepareStatement(flagEventsSqlWithPlaceholders)) {
+
+      preparedStatement.execute();
+
+    } catch (Exception e) {
+      LOGGER.warn("Caught Exception while trying to delete all blacklisted camunda task events", e);
+    }
+  }
+
+  private String getBlockedUntil() {
+
+    Duration blockedDuration =
+        Duration.parse(
+            ReadPropertiesHelper.getPropertyValueFromFile(
+                TASKANA_OUTBOX_PROPERTIES,
+                TASKANA_ADAPTER_OUTBOX_DURATION_BETWEEN_TASK_CREATION_RETRIES));
+
+    return Instant.now().plus(blockedDuration).toString();
   }
 
   private static DataSource createDatasource(
@@ -129,7 +302,10 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
 
       String sql =
           String.format(
-              SQL_GET_CREATE_EVENTS, OUTBOX_SCHEMA, Integer.valueOf(maxNumberOfEventsReturned));
+              SQL_GET_CREATE_EVENTS,
+              OUTBOX_SCHEMA,
+              Instant.now().toString(),
+              Integer.valueOf(maxNumberOfEventsReturned));
       try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
         preparedStatement.setString(1, CREATE);
@@ -168,6 +344,8 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
       camundaTaskEvent.setType(createEventsResultSet.getString(2));
       camundaTaskEvent.setCreated(formatDate(createEventsResultSet.getTimestamp(3)));
       camundaTaskEvent.setPayload(createEventsResultSet.getString(4));
+      camundaTaskEvent.setRemainingRetries(createEventsResultSet.getInt(5));
+      camundaTaskEvent.setBlockedUntil(createEventsResultSet.getString(6));
 
       camundaTaskEvents.add(camundaTaskEvent);
     }

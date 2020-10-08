@@ -4,10 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -18,6 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.test.context.ContextConfiguration;
 import uk.co.datumedge.hamcrest.json.SameJSONAs;
 
+import pro.taskana.adapter.systemconnector.api.ReferencedTask;
 import pro.taskana.adapter.test.TaskanaAdapterTestApplication;
 import pro.taskana.common.api.exceptions.NotAuthorizedException;
 import pro.taskana.security.JaasExtension;
@@ -155,6 +161,40 @@ class TestTaskAcquisition extends AbsIntegrationTest {
       groupNames = {"admin"})
   @Test
   void
+      task_with_primitive_variabljes_should_result_in_taskanaTask_with_those_variables_in_custom_attributes()
+          throws Exception {
+
+    ReferencedTask ref = new ReferencedTask();
+    ref.setVariables("{}");
+
+    ObjectMapper objectMapper = new ObjectMapper();
+
+    String refTsk = objectMapper.writeValueAsString(ref);
+    Field datasource = AbsIntegrationTest.class.getDeclaredField("camundaBpmDataSource");
+
+    datasource.setAccessible(true);
+
+    DataSource source = (DataSource)datasource.get(this);
+
+    Connection connection = source.getConnection();
+
+    String sql = "insert into taskana_tables.event_store (TYPE,CREATED,PAYLOAD,REMAINING_RETRIES,BLOCKED_UNTIL) VALUES ('CREATE',null,"+"'"+refTsk+"'"+",5,'2018-01-30 16:55:24')";
+
+    Statement statement = connection.createStatement();
+
+    statement.execute(sql);
+    statement.execute(sql);
+
+    Thread.sleep(1000000);
+
+
+  }
+
+  @WithAccessId(
+      userName = "teamlead_1",
+      groupNames = {"admin"})
+  @Test
+  void
       task_with_primitive_variables_should_result_in_taskanaTask_with_those_variables_in_custom_attributes()
           throws Exception {
 
@@ -167,7 +207,7 @@ class TestTaskAcquisition extends AbsIntegrationTest {
     List<String> camundaTaskIds =
         this.camundaProcessengineRequester.getTaskIdsFromProcessInstanceId(processInstanceId);
 
-    Thread.sleep((long) (this.adapterTaskPollingInterval * 1.2));
+    Thread.sleep((long) (this.adapterTaskPollingInterval * 200));
 
     String expectedPrimitiveVariable1 =
         "{\"type\":\"Long\",\"value\":555,\"valueInfo\":"
@@ -190,6 +230,8 @@ class TestTaskAcquisition extends AbsIntegrationTest {
               expectedPrimitiveVariable2,
               SameJSONAs.sameJSONAs(customAttributes.get("camunda:item")));
         });
+
+    Thread.sleep((long) (this.adapterTaskPollingInterval * 200));
   }
 
   @WithAccessId(
@@ -307,7 +349,7 @@ class TestTaskAcquisition extends AbsIntegrationTest {
         this.camundaProcessengineRequester.getTaskIdsFromProcessInstanceId(processInstanceId);
     assertThat(camundaTaskIds).hasSize(3);
 
-    Thread.sleep((long) (this.adapterTaskPollingInterval * 1.2));
+    Thread.sleep((long) (this.adapterTaskPollingInterval * 200));
 
     for (String camundaTaskId : camundaTaskIds) {
       List<TaskSummary> taskanaTasks =
