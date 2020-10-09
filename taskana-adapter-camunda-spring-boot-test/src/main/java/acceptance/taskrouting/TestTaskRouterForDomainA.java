@@ -23,6 +23,6 @@ public class TestTaskRouterForDomainA implements TaskRoutingProvider {
 
   @Override
   public String determineWorkbasketId(Task task) {
-return "wronKey";
+    return "wronKey";
   }
 }

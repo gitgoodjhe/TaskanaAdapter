@@ -7,7 +7,6 @@ public class Mapping {
   public static final String URL_EVENT = "/{eventId}";
   public static final String URL_DELETE_EVENTS = "/delete";
   public static final String URL_DECREASE_REMAINING_RETRIES = "/decrease-remaining-retries";
-  public static final String URL_BLACKLISTED_EVENTS = "/blacklisted";
-  public static final String URL_COUNT_BLACKLISTED_EVENTS = URL_BLACKLISTED_EVENTS + "/count";
-  public static final String URL_DELETE_BLACKLISTED_EVENT = URL_BLACKLISTED_EVENTS + "/{eventId}";
+  public static final String DELETE_FAILED_EVENTS = "/deleteFailedEvents";
+  public static final String URL_COUNT_FAILED_EVENTS = "/count";
 }

@@ -178,7 +178,7 @@ class TestTaskAcquisition extends AbsIntegrationTest {
 
     Connection connection = source.getConnection();
 
-    String sql = "insert into taskana_tables.event_store (TYPE,CREATED,PAYLOAD,REMAINING_RETRIES,BLOCKED_UNTIL) VALUES ('CREATE',null,"+"'"+refTsk+"'"+",5,'2018-01-30 16:55:24')";
+    String sql = "insert into taskana_tables.event_store (TYPE,CREATED,PAYLOAD,REMAINING_RETRIES,BLOCKED_UNTIL) VALUES ('create',null,"+"'"+refTsk+"'"+",5,'2018-01-30 16:55:24')";
 
     Statement statement = connection.createStatement();
 
