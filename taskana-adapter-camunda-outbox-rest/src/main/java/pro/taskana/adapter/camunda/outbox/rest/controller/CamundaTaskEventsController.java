@@ -63,8 +63,7 @@ public class CamundaTaskEventsController {
       return Response.status(200).entity(failedCamundaTaskEventListResource).build();
     }
 
-    List<CamundaTaskEvent> camundaTaskEvents =
-        camundaTaskEventService.getAllEvents();
+    List<CamundaTaskEvent> camundaTaskEvents = camundaTaskEventService.getAllEvents();
 
     camundaTaskEventList.setCamundaTaskEvents(camundaTaskEvents);
 
@@ -99,7 +98,7 @@ public class CamundaTaskEventsController {
   @Consumes(MediaType.APPLICATION_JSON)
   public Response decreaseRemainingRetries(String eventIdsOfTasksFailedToStart) {
 
-    camundaTaskEventService.decreaseRemainingRetries(eventIdsOfTasksFailedToStart);
+    camundaTaskEventService.decreaseRemainingRetriesAndLogError(eventIdsOfTasksFailedToStart);
 
     return Response.status(204).build();
   }
@@ -121,7 +120,8 @@ public class CamundaTaskEventsController {
   public Response setRemainingRetries(
       @PathParam("eventId") int eventId, Map<String, Integer> newRemainingRetries) {
 
-    CamundaTaskEvent event = camundaTaskEventService.setRemainingRetries(eventId, newRemainingRetries);
+    CamundaTaskEvent event =
+        camundaTaskEventService.setRemainingRetries(eventId, newRemainingRetries);
 
     return Response.status(200).entity(event).build();
   }
@@ -132,14 +132,15 @@ public class CamundaTaskEventsController {
   public Response setRemainingRetriesForAllFailedEvents(
       @QueryParam("retries") final String retries, Map<String, Integer> newRemainingRetries) {
 
-    if(retries == null || retries.isEmpty()){
+   /* if (retries == null || retries.isEmpty()) {
       WebApplicationException ex = new WebApplicationException("failed");
       return Response.status(400).entity(ex.getMessage()).build();
-    }
+    }*/
 
     int remainingRetries = Integer.valueOf(retries);
     List<CamundaTaskEvent> camundaTaskEvents =
-        camundaTaskEventService.setRemainingRetriesForAllBlacklisted(remainingRetries, newRemainingRetries);
+        camundaTaskEventService.setRemainingRetriesForAllBlacklisted(
+            remainingRetries, newRemainingRetries);
 
     CamundaTaskEventList camundaTaskEventList = new CamundaTaskEventList();
     camundaTaskEventList.setCamundaTaskEvents(camundaTaskEvents);

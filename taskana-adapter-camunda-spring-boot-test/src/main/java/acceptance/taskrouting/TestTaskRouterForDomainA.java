@@ -23,6 +23,15 @@ public class TestTaskRouterForDomainA implements TaskRoutingProvider {
 
   @Override
   public String determineWorkbasketId(Task task) {
-    return "wronKey";
+    if ("DOMAIN_A".equals(task.getDomain())) {
+      List<WorkbasketSummary> wbs =
+          theEngine.getWorkbasketService().createWorkbasketQuery().domainIn("DOMAIN_A").list();
+      if (LOGGER.isInfoEnabled()) {
+        LOGGER.info(String.format("TestTaskRouterForDomainA Routing to %s", wbs.get(0)));
+      }
+      return wbs.get(0).getId();
+    } else {
+      return null;
+    }
   }
 }

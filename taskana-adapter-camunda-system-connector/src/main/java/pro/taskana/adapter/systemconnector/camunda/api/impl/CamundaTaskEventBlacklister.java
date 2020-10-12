@@ -1,6 +1,5 @@
 package pro.taskana.adapter.systemconnector.camunda.api.impl;
 
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +8,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import pro.taskana.adapter.systemconnector.api.ReferencedTask;
+
 @Component
 public class CamundaTaskEventBlacklister {
 
@@ -16,33 +17,42 @@ public class CamundaTaskEventBlacklister {
   @Autowired HttpHeaderProvider httpHeaderProvider;
   @Autowired private RestTemplate restTemplate;
 
-  public void decreaseRemainingRetriesForReferencedTasks(
-      List<String> failedCreationTaskIds, String camundaSystemTaskEventUrl) {
+  public void decreaseRemainingRetriesAndLogErrorForReferencedTasks(
+      ReferencedTask referencedTask, Exception e, String camundaSystemTaskEventUrl) {
 
     LOGGER.debug(
-        "entry to decreaseRemainingRetriesForReferencedTasks, CamundSystemURL = {}", camundaSystemTaskEventUrl);
+        "entry to decreaseRemainingRetriesAndLogErrorForReferencedTasks, CamundSystemURL = {}",
+        camundaSystemTaskEventUrl);
 
-    String requestUrl =
-        camundaSystemTaskEventUrl + CamundaSystemConnectorImpl.URL_CAMUNDA_EVENT_DECREASE_REMAINING_RETRIES;
+    String decreaseRemainingRetriesUrl =
+        String.format(
+            CamundaSystemConnectorImpl.URL_CAMUNDA_EVENT_DECREASE_REMAINING_RETRIES,
+            Integer.valueOf(referencedTask.getOutboxEventId()));
+    String requestUrl = camundaSystemTaskEventUrl + decreaseRemainingRetriesUrl;
 
-    String failedIds = "{\"taskCreationIds\":[" + String.join(",", failedCreationTaskIds) + "]}";
+    String failedTaskEventIdAndErrorLog =
+        "{\"taskEventId\":"
+            + referencedTask.getOutboxEventId()
+            + ",\"errorLog\":\""
+            + referencedTask.getId()
+            + ":"
+            + e.getCause()
+            + "\"}";
 
-    LOGGER.debug("flag Events url {} ", requestUrl);
+    LOGGER.debug("decreaseRemainingRetriesAndLogError Events url {} ", requestUrl);
 
-    decreaseRemainingRetries(requestUrl, failedIds);
+    decreaseRemainingRetriesAndLogError(requestUrl, failedTaskEventIdAndErrorLog);
 
     if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("exit from flagEventsForReferencedTaskIds.");
+      LOGGER.debug("exit from decreaseRemainingRetriesAndLogErrorForReferencedTasks.");
     }
   }
 
-  private void decreaseRemainingRetries(
-      String requestUrl, String failedIds) {
+  private void decreaseRemainingRetriesAndLogError(String requestUrl, String failedTaskEventIdAndErrorLog) {
 
     HttpHeaders headers = httpHeaderProvider.getHttpHeadersForOutboxRestApi();
 
-    HttpEntity<String> request =
-        new HttpEntity<>(failedIds, headers);
+    HttpEntity<String> request = new HttpEntity<>(failedTaskEventIdAndErrorLog, headers);
 
     restTemplate.postForObject(requestUrl, request, String.class);
   }

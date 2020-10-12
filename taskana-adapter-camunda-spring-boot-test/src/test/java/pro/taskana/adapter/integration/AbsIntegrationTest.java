@@ -63,7 +63,12 @@ public abstract class AbsIntegrationTest {
   @Value("${adapter.polling.inverval.adjustment.factor}")
   protected double adapterPollingInvervalAdjustmentFactor;
 
+  @Value("10000")
+  protected long adapterRetryAndBlockingInterval;
+
   protected CamundaProcessengineRequester camundaProcessengineRequester;
+
+  protected TaskanaOutboxRequester taskanaOutboxRequester;
 
   protected TaskService taskService;
 
@@ -101,6 +106,7 @@ public abstract class AbsIntegrationTest {
     this.camundaProcessengineRequester =
         new CamundaProcessengineRequester(
             this.processEngineConfiguration.getProcessEngineName(), this.restTemplate);
+    this.taskanaOutboxRequester = new TaskanaOutboxRequester(this.restTemplate);
     this.taskService = taskanaEngine.getTaskService();
 
     // adjust polling interval, give adapter a little more time

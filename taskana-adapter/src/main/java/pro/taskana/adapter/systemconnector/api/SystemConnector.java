@@ -2,6 +2,8 @@ package pro.taskana.adapter.systemconnector.api;
 
 import java.util.List;
 
+import pro.taskana.adapter.exceptions.TaskCreationFailedException;
+
 /** This is the interface, a System Connector has to implement. */
 public interface SystemConnector {
 
@@ -84,4 +86,13 @@ public interface SystemConnector {
    * @return the URL of the connected external system.
    */
   String getSystemUrl();
+
+  /**
+   * With this call the Adapter notifies the SystemConnector that a TASKANA task has failed
+   * to be created. Depending on the Implementation of the SystemConnector, it may ignore this call.
+   *
+   * @param referencedTask The ReferencedTasks for which the TASKANA task failed to be created
+   * @param e exception
+   */
+  void taskanaTaskFailedToBeCreatedForNewReferencedTask(ReferencedTask referencedTask, Exception e);
 }

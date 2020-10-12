@@ -244,6 +244,34 @@ public class CamundaProcessengineRequester {
     return false;
   }
 
+  public boolean deleteFailedEvent(int id)
+      throws JSONException {
+
+    String url = "http://localhost:10020/outbox-rest/events/"+id;
+    System.out.println("#####url" + url);
+
+    String url2 =
+        BASIC_ENGINE_PATH + this.processEngineKey + PROCESS_INSTANCE_PATH + "/";
+
+    System.out.println("#####url2" + url2);
+
+    HttpEntity<String> requestEntity = prepareEntityFromBody("{}");
+    ResponseEntity<String> answer =
+        this.restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, String.class);
+
+    if (HttpStatus.NO_CONTENT.equals(answer.getStatusCode())) {
+      return true;
+    } else {
+      JSONObject answerJson = new JSONObject(answer.getBody());
+      String answerMessage = (String) answerJson.get("message");
+      if (answerMessage.contains("Process instance with id")
+              && answerMessage.contains("does not exist")) {
+        return false;
+      }
+    }
+    return false;
+  }
+
   /**
    * Determines if a provided assignee equals the assignee of a camunda task.
    *

@@ -23,6 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.test.context.ContextConfiguration;
 import uk.co.datumedge.hamcrest.json.SameJSONAs;
 
+import pro.taskana.adapter.camunda.outbox.rest.resource.CamundaTaskEventListResource;
 import pro.taskana.adapter.systemconnector.api.ReferencedTask;
 import pro.taskana.adapter.test.TaskanaAdapterTestApplication;
 import pro.taskana.common.api.exceptions.NotAuthorizedException;
@@ -164,29 +165,48 @@ class TestTaskAcquisition extends AbsIntegrationTest {
       task_with_primitive_variabljes_should_result_in_taskanaTask_with_those_variables_in_custom_attributes()
           throws Exception {
 
-    ReferencedTask ref = new ReferencedTask();
-    ref.setVariables("{}");
+    String processInstanceId =
+        this.camundaProcessengineRequester.startCamundaProcessAndReturnId(
+            "simple_user_task_process_with_incorrect_workbasket_key", "");
 
-    ObjectMapper objectMapper = new ObjectMapper();
+    List<String> camundaTaskIds =
+        this.camundaProcessengineRequester.getTaskIdsFromProcessInstanceId(processInstanceId);
 
-    String refTsk = objectMapper.writeValueAsString(ref);
-    Field datasource = AbsIntegrationTest.class.getDeclaredField("camundaBpmDataSource");
+    assertThat(camundaTaskIds).hasSize(3);
 
-    datasource.setAccessible(true);
+    Thread.sleep((long) (this.adapterTaskPollingInterval * 1.2));
 
-    DataSource source = (DataSource)datasource.get(this);
+    //retries still above 0
+    assertThat(taskanaOutboxRequester.getFailedEvents()).hasSize(0);
 
-    Connection connection = source.getConnection();
+    Thread.sleep(this.adapterRetryAndBlockingInterval);
 
-    String sql = "insert into taskana_tables.event_store (TYPE,CREATED,PAYLOAD,REMAINING_RETRIES,BLOCKED_UNTIL) VALUES ('create',null,"+"'"+refTsk+"'"+",5,'2018-01-30 16:55:24')";
+    //retries = 0, no retries left
+    assertThat(taskanaOutboxRequester.getFailedEvents()).hasSize(3);
 
-    Statement statement = connection.createStatement();
+    taskanaOutboxRequester.deleteFailedEvent(1);
 
-    statement.execute(sql);
-    statement.execute(sql);
+    assertThat(taskanaOutboxRequester.getFailedEvents()).hasSize(2);
 
-    Thread.sleep(1000000);
+    //reset all FailedEvents
+    taskanaOutboxRequester.setRemainingRetriesForAll(3);
 
+    assertThat(taskanaOutboxRequester.getFailedEvents()).hasSize(0);
+
+    Thread.sleep(this.adapterRetryAndBlockingInterval);
+
+    assertThat(taskanaOutboxRequester.getFailedEvents()).hasSize(2);
+
+    //reset specific failedEvent
+    taskanaOutboxRequester.setRemainingRetries(2,3);
+
+    assertThat(taskanaOutboxRequester.getFailedEvents()).hasSize(1);
+
+    Thread.sleep(this.adapterRetryAndBlockingInterval);
+
+    taskanaOutboxRequester.deleteAllFailedEvents();
+
+    assertThat(taskanaOutboxRequester.getFailedEvents()).hasSize(0);
 
   }
 

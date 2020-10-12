@@ -71,7 +71,7 @@ public class TaskanaTaskStarter {
 
         systemConnector.taskanaTasksHaveBeenCreatedForNewReferencedTasks(newCreatedTasksInTaskana);
 
-        tasksToStart.removeAll(newCreatedTasksInTaskana);
+      /*  tasksToStart.removeAll(newCreatedTasksInTaskana);
 
         List<ReferencedTask> tasksFailedToStart = tasksToStart;
 
@@ -81,7 +81,7 @@ public class TaskanaTaskStarter {
               tasksFailedToStart.stream().map(ReferencedTask::getOutboxEventId).collect(Collectors.toList());
 
           systemConnector.taskanaTasksFailedToBeCreatedForNewReferencedTasks(eventIdsOfTasksFailedToStart);
-        }
+        }*/
 
       } finally {
         if (LOGGER.isTraceEnabled()) {
@@ -127,6 +127,7 @@ public class TaskanaTaskStarter {
               "caught Exception when attempting to start TaskanaTask for referencedTask {}",
               referencedTask,
               e);
+          systemConnector.taskanaTaskFailedToBeCreatedForNewReferencedTask(referencedTask, e);
 
         }
       } catch (Exception e) {
@@ -134,6 +135,7 @@ public class TaskanaTaskStarter {
             "caught unexpected Exception when attempting to start TaskanaTask for referencedTask {}",
             referencedTask,
             e);
+        systemConnector.taskanaTaskFailedToBeCreatedForNewReferencedTask(referencedTask, e);
       }
     }
     return newCreatedTasksInTaskana;

@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -53,7 +54,7 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
   private static final String SQL_WITHOUT_PLACEHOLDERS_DELETE_EVENTS =
       "delete from %s.event_store where id in (%s)";
   private static final String SQL_DECREASE_REMAINING_RETRIES =
-      "update %s.event_store set remaining_retries = remaining_retries-1, blocked_until = '%s' where id in (%s)";
+      "update %s.event_store set remaining_retries = remaining_retries-1, blocked_until = ?, error = ? where id = ?";
   private static final String SQL_SET_REMAINING_RETRIES =
       "update %s.event_store set remaining_retries = %d where id = %d";
   private static final String SQL_SET_REMAINING_RETRIES_FOR_ALL_BLACKLISTED_EVENTS =
@@ -63,6 +64,8 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
   private static final String SQL_DELETE_ALL_BLACKLISTED_EVENTS =
       "delete from %s.event_store where remaining_retries <= 0 ";
   private static final int MAX_NUMBER_OF_EVENTS_DEFAULT = 50;
+
+  private static ObjectMapper objectMapper = new ObjectMapper();
 
   private static Properties outboxProperties;
   private static int maxNumberOfEventsReturned = 0;
@@ -141,29 +144,28 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
     }
   }
 
-  public void decreaseRemainingRetries(String idsAsJsonArray) {
+  public void decreaseRemainingRetriesAndLogError(String eventIdAndErrorLog) {
 
-    List<Integer> idsAsIntegers = getIdsAsIntegers(idsAsJsonArray);
-
-    String blockedUntil = getBlockedUntil();
-
-    String decreaseRemainingRetriesSqlWithPlaceholdersSql =
-        String.format(
-            SQL_DECREASE_REMAINING_RETRIES,
-            OUTBOX_SCHEMA,
-            blockedUntil,
-            preparePlaceHolders(idsAsIntegers.size()));
+    String sql =  String.format(SQL_DECREASE_REMAINING_RETRIES,OUTBOX_SCHEMA);
 
     try (Connection connection = getConnection();
         PreparedStatement preparedStatement =
-            connection.prepareStatement(decreaseRemainingRetriesSqlWithPlaceholdersSql)) {
+            connection.prepareStatement(sql)) {
 
-      setPreparedStatementValues(preparedStatement, idsAsIntegers);
+      JsonNode id = objectMapper.readTree(eventIdAndErrorLog).get("taskEventId");
+
+      JsonNode errorLog = objectMapper.readTree(eventIdAndErrorLog).get("errorLog");
+
+      Instant blockedUntil = getBlockedUntil();
+
+      preparedStatement.setTimestamp(1, Timestamp.from(blockedUntil));
+      preparedStatement.setString(2,errorLog.asText());
+      preparedStatement.setInt(3, id.asInt());
       preparedStatement.execute();
 
     } catch (Exception e) {
       LOGGER.warn(
-          "Caught Exception while trying to decrease the remaining retries of camunda task events",
+          "Caught Exception while trying to decrease the remaining retries of camunda task event",
           e);
     }
   }
@@ -321,6 +323,7 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
         camundaTaskEvent.setPayload(completeAndDeleteEventsResultSet.getString(4));
         camundaTaskEvent.setRemainingRetries(completeAndDeleteEventsResultSet.getInt(5));
         camundaTaskEvent.setBlockedUntil(completeAndDeleteEventsResultSet.getString(6));
+        camundaTaskEvent.setError(completeAndDeleteEventsResultSet.getString(7));
 
         return camundaTaskEvent;
       }
@@ -344,13 +347,13 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
       ResultSet camundaTaskEventResultSet = preparedStatement.executeQuery();
       camundaTaskEvents = getCamundaTaskEvents(camundaTaskEventResultSet);
 
-    } catch (SQLException | NullPointerException e) {
+    } catch (Exception e) {
       LOGGER.warn("Caught Exception while trying to retrieve all events from the outbox", e);
     }
     return camundaTaskEvents;
   }
 
-  private String getBlockedUntil() {
+  private Instant getBlockedUntil() {
 
     Duration blockedDuration =
         Duration.parse(
@@ -358,7 +361,7 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
                 TASKANA_OUTBOX_PROPERTIES,
                 TASKANA_ADAPTER_OUTBOX_DURATION_BETWEEN_TASK_CREATION_RETRIES));
 
-    return Instant.now().plus(blockedDuration).toString();
+    return Instant.now().plus(blockedDuration);
   }
 
   private static DataSource createDatasource(
@@ -418,6 +421,7 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
       camundaTaskEvent.setPayload(createEventsResultSet.getString(4));
       camundaTaskEvent.setRemainingRetries(createEventsResultSet.getInt(5));
       camundaTaskEvent.setBlockedUntil(createEventsResultSet.getString(6));
+      camundaTaskEvent.setError(createEventsResultSet.getString(7));
 
       camundaTaskEvents.add(camundaTaskEvent);
     }
