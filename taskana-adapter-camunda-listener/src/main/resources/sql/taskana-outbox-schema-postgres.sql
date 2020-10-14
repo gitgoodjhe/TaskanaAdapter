@@ -17,5 +17,6 @@ CREATE TABLE IF NOT EXISTS %schemaName%.event_store
     payload text COLLATE pg_catalog."default",
     REMAINING_RETRIES INT NOT NULL,
     BLOCKED_UNTIL TIMESTAMP NOT NULL,
+    ERROR text,
     CONSTRAINT event_store_pkey PRIMARY KEY (id)
     );

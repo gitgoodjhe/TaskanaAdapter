@@ -9,4 +9,5 @@ import javax.ws.rs.HttpMethod;
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @HttpMethod("PATCH")
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public @interface PATCH {}

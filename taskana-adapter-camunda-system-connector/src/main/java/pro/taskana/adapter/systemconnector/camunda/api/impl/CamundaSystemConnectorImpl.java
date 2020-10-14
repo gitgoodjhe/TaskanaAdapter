@@ -16,7 +16,8 @@ public class CamundaSystemConnectorImpl implements SystemConnector {
   static final String URL_GET_CAMUNDA_CREATE_EVENTS = "/events?type=create";
   static final String URL_GET_CAMUNDA_FINISHED_EVENTS = "/events?type=complete&type=delete";
   static final String URL_DELETE_CAMUNDA_EVENTS = "/events/delete";
-  static final String URL_CAMUNDA_EVENT_DECREASE_REMAINING_RETRIES = "/events/%d/decrease-remaining-retries";
+  static final String URL_CAMUNDA_EVENT_DECREASE_REMAINING_RETRIES =
+      "/events/%d/decrease-remaining-retries";
 
   static final String BODY_SET_CAMUNDA_VARIABLES = "{\"variables\":{";
   static final String LOCAL_VARIABLE_PATH = "/localVariables";
@@ -39,7 +40,7 @@ public class CamundaSystemConnectorImpl implements SystemConnector {
 
   private CamundaTaskEventCleaner taskEventCleaner;
 
-  private CamundaTaskEventBlacklister taskEventBlacklister;
+  private CamundaTaskEventErrorHandler taskEventErrorHandler;
 
   public CamundaSystemConnectorImpl(CamundaSystemUrls.SystemUrlInfo camundaSystemUrl) {
     this.camundaSystemUrl = camundaSystemUrl;
@@ -48,7 +49,8 @@ public class CamundaSystemConnectorImpl implements SystemConnector {
     taskClaimer = AdapterSpringContextProvider.getBean(CamundaTaskClaimer.class);
     taskClaimCanceler = AdapterSpringContextProvider.getBean(CamundaTaskClaimCanceler.class);
     taskEventCleaner = AdapterSpringContextProvider.getBean(CamundaTaskEventCleaner.class);
-    taskEventBlacklister = AdapterSpringContextProvider.getBean(CamundaTaskEventBlacklister.class);
+    taskEventErrorHandler =
+        AdapterSpringContextProvider.getBean(CamundaTaskEventErrorHandler.class);
   }
 
   @Override
@@ -61,13 +63,6 @@ public class CamundaSystemConnectorImpl implements SystemConnector {
       List<ReferencedTask> referencedTasks) {
     taskEventCleaner.cleanEventsForReferencedTasks(
         referencedTasks, camundaSystemUrl.getSystemTaskEventUrl());
-  }
-
-  @Override
-  public void taskanaTasksFailedToBeCreatedForNewReferencedTasks(
-      List<String> eventIdsOfTasksFailedToStart) {
-  /*  taskEventBlacklister.decreaseRemainingRetriesForReferencedTasks(
-        eventIdsOfTasksFailedToStart, camundaSystemUrl.getSystemTaskEventUrl());*/
   }
 
   @Override
@@ -108,8 +103,9 @@ public class CamundaSystemConnectorImpl implements SystemConnector {
   }
 
   @Override
-  public void taskanaTaskFailedToBeCreatedForNewReferencedTask(ReferencedTask referencedTask,
-      Exception e) {
-    taskEventBlacklister.decreaseRemainingRetriesAndLogErrorForReferencedTasks(referencedTask,e,camundaSystemUrl.getSystemTaskEventUrl());
+  public void taskanaTaskFailedToBeCreatedForNewReferencedTask(
+      ReferencedTask referencedTask, Exception e) {
+    taskEventErrorHandler.decreaseRemainingRetriesAndLogErrorForReferencedTask(
+        referencedTask, e, camundaSystemUrl.getSystemTaskEventUrl());
   }
 }

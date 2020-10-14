@@ -6,6 +6,7 @@ import javax.sql.DataSource;
 import org.camunda.bpm.engine.ProcessEngineConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.common.DataValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -21,6 +22,7 @@ import pro.taskana.common.api.exceptions.DomainNotFoundException;
 import pro.taskana.common.api.exceptions.InvalidArgumentException;
 import pro.taskana.common.api.exceptions.NotAuthorizedException;
 import pro.taskana.impl.configuration.DbCleaner;
+import pro.taskana.impl.configuration.DbCleaner.ApplicationDatabaseType;
 import pro.taskana.security.JaasExtension;
 import pro.taskana.security.WithAccessId;
 import pro.taskana.task.api.TaskService;
@@ -80,7 +82,7 @@ public abstract class AbsIntegrationTest {
   private DataSource taskanaDataSource;
 
   @Resource(name = "camundaBpmDataSource")
-  private DataSource camundaBpmDataSource;
+  protected DataSource camundaBpmDataSource;
 
   @BeforeEach
   @WithAccessId(userName = "admin")
@@ -95,9 +97,9 @@ public abstract class AbsIntegrationTest {
       taskanaEngine = taskanaEngineConfiguration.buildTaskanaEngine();
       taskanaEngine.setConnectionManagementMode(ConnectionManagementMode.AUTOCOMMIT);
 
-      DbCleaner cleaner = new DbCleaner();
-      cleaner.clearDb(taskanaDataSource, DbCleaner.ApplicationDatabaseType.TASKANA);
-      cleaner.clearDb(camundaBpmDataSource, DbCleaner.ApplicationDatabaseType.CAMUNDA);
+    DbCleaner cleaner = new DbCleaner();
+    cleaner.clearDb(taskanaDataSource, DbCleaner.ApplicationDatabaseType.TASKANA);
+    cleaner.clearDb(camundaBpmDataSource, DbCleaner.ApplicationDatabaseType.CAMUNDA);
 
       isInitialised = true;
     }

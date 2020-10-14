@@ -11,13 +11,13 @@ import org.springframework.web.client.RestTemplate;
 import pro.taskana.adapter.systemconnector.api.ReferencedTask;
 
 @Component
-public class CamundaTaskEventBlacklister {
+public class CamundaTaskEventErrorHandler {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(CamundaTaskEventBlacklister.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(CamundaTaskEventErrorHandler.class);
   @Autowired HttpHeaderProvider httpHeaderProvider;
   @Autowired private RestTemplate restTemplate;
 
-  public void decreaseRemainingRetriesAndLogErrorForReferencedTasks(
+  public void decreaseRemainingRetriesAndLogErrorForReferencedTask(
       ReferencedTask referencedTask, Exception e, String camundaSystemTaskEventUrl) {
 
     LOGGER.debug(
@@ -48,7 +48,8 @@ public class CamundaTaskEventBlacklister {
     }
   }
 
-  private void decreaseRemainingRetriesAndLogError(String requestUrl, String failedTaskEventIdAndErrorLog) {
+  private void decreaseRemainingRetriesAndLogError(
+      String requestUrl, String failedTaskEventIdAndErrorLog) {
 
     HttpHeaders headers = httpHeaderProvider.getHttpHeadersForOutboxRestApi();
 

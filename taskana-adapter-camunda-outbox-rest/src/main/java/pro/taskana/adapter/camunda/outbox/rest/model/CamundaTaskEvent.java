@@ -55,16 +55,12 @@ public class CamundaTaskEvent implements Serializable {
     this.remainingRetries = remainingRetries;
   }
 
-  public String getBlockedUntil() {
-    return blockedUntil;
-  }
-
   public void setBlockedUntil(String blockedUntil) {
     this.blockedUntil = blockedUntil;
   }
 
-  public static long getSerialVersionUID() {
-    return serialVersionUID;
+  public String getBlockedUntil() {
+    return blockedUntil;
   }
 
   public String getError() {

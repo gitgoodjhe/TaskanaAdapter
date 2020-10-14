@@ -2,7 +2,6 @@ package pro.taskana.adapter.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,19 +69,6 @@ public class TaskanaTaskStarter {
             createAndStartTaskanaTasks(systemConnector, tasksToStart);
 
         systemConnector.taskanaTasksHaveBeenCreatedForNewReferencedTasks(newCreatedTasksInTaskana);
-
-      /*  tasksToStart.removeAll(newCreatedTasksInTaskana);
-
-        List<ReferencedTask> tasksFailedToStart = tasksToStart;
-
-        if (tasksFailedToStart != null && !tasksFailedToStart.isEmpty()) {
-
-          List<String> eventIdsOfTasksFailedToStart =
-              tasksFailedToStart.stream().map(ReferencedTask::getOutboxEventId).collect(Collectors.toList());
-
-          systemConnector.taskanaTasksFailedToBeCreatedForNewReferencedTasks(eventIdsOfTasksFailedToStart);
-        }*/
-
       } finally {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace(
@@ -128,11 +114,11 @@ public class TaskanaTaskStarter {
               referencedTask,
               e);
           systemConnector.taskanaTaskFailedToBeCreatedForNewReferencedTask(referencedTask, e);
-
         }
       } catch (Exception e) {
         LOGGER.warn(
-            "caught unexpected Exception when attempting to start TaskanaTask for referencedTask {}",
+            "caught unexpected Exception when attempting to start TaskanaTask "
+                + "for referencedTask {}",
             referencedTask,
             e);
         systemConnector.taskanaTaskFailedToBeCreatedForNewReferencedTask(referencedTask, e);

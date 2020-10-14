@@ -16,6 +16,8 @@ import pro.taskana.adapter.camunda.outbox.rest.resource.CamundaTaskEventListReso
 /** Class to assist with building requests against the TASKNA Outbox REST API. */
 public class TaskanaOutboxRequester {
 
+  private static final String BASIC_OUTBOX_PATH = "http://localhost:10020/outbox-rest/events";
+
   private final TestRestTemplate restTemplate;
 
   public TaskanaOutboxRequester(TestRestTemplate restTemplate) {
@@ -24,7 +26,7 @@ public class TaskanaOutboxRequester {
 
   public boolean deleteFailedEvent(int id) throws JSONException {
 
-    String url = "http://localhost:10020/outbox-rest/events/" + id;
+    String url = BASIC_OUTBOX_PATH + "/" + id;
 
     HttpEntity<String> requestEntity = prepareEntityFromBody("{}");
     ResponseEntity<String> answer =
@@ -38,7 +40,7 @@ public class TaskanaOutboxRequester {
 
   public boolean deleteAllFailedEvents() throws JSONException {
 
-    String url = "http://localhost:10020/outbox-rest/events/deleteFailedEvents";
+    String url = BASIC_OUTBOX_PATH + "/deleteFailedEvents";
 
     HttpEntity<String> requestEntity = prepareEntityFromBody("{}");
     ResponseEntity<String> answer =
@@ -52,7 +54,7 @@ public class TaskanaOutboxRequester {
 
   public List<CamundaTaskEvent> getFailedEvents() {
 
-    String url = "http://localhost:10020/outbox-rest/events?retries=0";
+    String url = BASIC_OUTBOX_PATH + "?retries=0";
 
     HttpEntity<String> requestEntity = prepareEntityFromBody("{}");
     ResponseEntity<CamundaTaskEventListResource> answer =
@@ -64,7 +66,7 @@ public class TaskanaOutboxRequester {
 
   public boolean setRemainingRetries(int id, int newRetries) throws JSONException {
 
-    String url = "http://localhost:10020/outbox-rest/events/" + id;
+    String url = BASIC_OUTBOX_PATH + "/" + id;
 
     HttpEntity<String> requestEntity =
         prepareEntityFromBody("{\"remainingRetries\":" + newRetries + "}");
@@ -79,7 +81,7 @@ public class TaskanaOutboxRequester {
 
   public boolean setRemainingRetriesForAll(int newRetries) throws JSONException {
 
-    String url = "http://localhost:10020/outbox-rest/events?retries=0";
+    String url = BASIC_OUTBOX_PATH + "?retries=0";
 
     HttpEntity<String> requestEntity =
         prepareEntityFromBody("{\"remainingRetries\":" + newRetries + "}");
