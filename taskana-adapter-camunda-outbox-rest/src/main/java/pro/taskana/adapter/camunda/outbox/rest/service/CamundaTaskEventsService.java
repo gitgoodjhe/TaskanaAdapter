@@ -396,9 +396,8 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
 
     Duration blockedDuration =
         Duration.parse(
-            ReadPropertiesHelper.getPropertyValueFromFile(
-                TASKANA_OUTBOX_PROPERTIES,
-                TASKANA_ADAPTER_OUTBOX_DURATION_BETWEEN_TASK_CREATION_RETRIES));
+            ReadPropertiesHelper.getInstance()
+                .getProperty(TASKANA_ADAPTER_OUTBOX_DURATION_BETWEEN_TASK_CREATION_RETRIES));
 
     return Instant.now().plus(blockedDuration);
   }

@@ -118,8 +118,7 @@ public class TaskanaParseListenerProcessEnginePlugin extends AbstractProcessEngi
     boolean createSchema = true;
 
     String createSchemaProperty =
-        ReadPropertiesHelper.getPropertyValueFromFile(
-            TASKANA_OUTBOX_PROPERTIES, TASKANA_ADAPTER_CREATE_OUTBOX_SCHEMA);
+        ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_CREATE_OUTBOX_SCHEMA);
 
     if (createSchemaProperty != null && "false".equalsIgnoreCase(createSchemaProperty)) {
       createSchema = false;
@@ -131,8 +130,7 @@ public class TaskanaParseListenerProcessEnginePlugin extends AbstractProcessEngi
   private String initSchemaName(DataSource dataSource) {
 
     String outboxSchema =
-        ReadPropertiesHelper.getPropertyValueFromFile(
-            TASKANA_OUTBOX_PROPERTIES, TASKANA_ADAPTER_OUTBOX_SCHEMA);
+        ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_SCHEMA);
     outboxSchema =
         (outboxSchema == null || outboxSchema.isEmpty())
             ? TASKANA_OUTBOX_DEFAULT_SCHEMA
@@ -181,8 +179,7 @@ public class TaskanaParseListenerProcessEnginePlugin extends AbstractProcessEngi
     DataSource dataSource = null;
     try {
       String jndiLookup =
-          ReadPropertiesHelper.getPropertyValueFromFile(
-              TASKANA_OUTBOX_PROPERTIES, TASKANA_ADAPTER_OUTBOX_DATASOURCE_JNDI);
+          ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_JNDI);
 
       if (jndiLookup != null) {
         dataSource = (DataSource) new InitialContext().lookup(jndiLookup);
@@ -193,17 +190,16 @@ public class TaskanaParseListenerProcessEnginePlugin extends AbstractProcessEngi
         }
       } else {
         String driver =
-            ReadPropertiesHelper.getPropertyValueFromFile(
-                TASKANA_OUTBOX_PROPERTIES, TASKANA_ADAPTER_OUTBOX_DATASOURCE_DRIVER);
+            ReadPropertiesHelper.getInstance()
+                .getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_DRIVER);
         String jdbcUrl =
-            ReadPropertiesHelper.getPropertyValueFromFile(
-                TASKANA_OUTBOX_PROPERTIES, TASKANA_ADAPTER_OUTBOX_DATASOURCE_URL);
+            ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_URL);
         String userName =
-            ReadPropertiesHelper.getPropertyValueFromFile(
-                TASKANA_OUTBOX_PROPERTIES, TASKANA_ADAPTER_OUTBOX_DATASOURCE_USERNAME);
+            ReadPropertiesHelper.getInstance()
+                .getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_USERNAME);
         String password =
-            ReadPropertiesHelper.getPropertyValueFromFile(
-                TASKANA_OUTBOX_PROPERTIES, TASKANA_ADAPTER_OUTBOX_DATASOURCE_PASSWORD);
+            ReadPropertiesHelper.getInstance()
+                .getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_PASSWORD);
         dataSource = createDatasource(driver, jdbcUrl, userName, password);
         LOGGER.info("created Datasource from properties {}, ...", jdbcUrl);
       }

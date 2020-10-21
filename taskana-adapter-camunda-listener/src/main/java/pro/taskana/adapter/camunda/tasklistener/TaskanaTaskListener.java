@@ -173,8 +173,7 @@ public class TaskanaTaskListener implements TaskListener, TaskanaConfigurationPr
 
     if (outboxSchemaName == null) {
       outboxSchemaName =
-          ReadPropertiesHelper.getPropertyValueFromFile(
-              TASKANA_OUTBOX_PROPERTIES, TASKANA_ADAPTER_OUTBOX_SCHEMA);
+          ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_SCHEMA);
     }
 
     outboxSchemaName =
@@ -200,9 +199,8 @@ public class TaskanaTaskListener implements TaskListener, TaskanaConfigurationPr
 
       int initialRetries =
           Integer.parseInt(
-              ReadPropertiesHelper.getPropertyValueFromFile(
-                  TASKANA_OUTBOX_PROPERTIES,
-                  TASKANA_ADAPTER_OUTBOX_INITIAL_NUMBER_OF_TASK_CREATION_RETRIES));
+              ReadPropertiesHelper.getInstance()
+                  .getProperty(TASKANA_ADAPTER_OUTBOX_INITIAL_NUMBER_OF_TASK_CREATION_RETRIES));
 
       preparedStatement.setString(1, delegateTask.getEventName());
       preparedStatement.setTimestamp(2, eventCreationTimestamp);
