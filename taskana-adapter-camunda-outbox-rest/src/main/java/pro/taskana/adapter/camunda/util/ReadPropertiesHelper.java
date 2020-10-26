@@ -1,5 +1,6 @@
 package pro.taskana.adapter.camunda.util;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -15,12 +16,33 @@ public class ReadPropertiesHelper implements TaskanaConfigurationProperties {
   private final Properties outboxProperties = new Properties();
 
   private ReadPropertiesHelper() {
-    InputStream propertiesStream =
-        this.getClass().getClassLoader().getResourceAsStream(TASKANA_OUTBOX_PROPERTIES);
-    try {
-      outboxProperties.load(propertiesStream);
-    } catch (IOException e) {
-      LOGGER.warn("Caught Exception while trying to load properties", e);
+
+    String outboxPropertiesFile = System.getProperty("taskana.outbox.properties");
+
+    if (outboxPropertiesFile != null) {
+
+      try (FileInputStream stream = new FileInputStream(outboxPropertiesFile)) {
+        outboxProperties.load(stream);
+
+        LOGGER.debug("Outbox properties were loaded from file {}.", outboxPropertiesFile);
+
+      } catch (IOException e) {
+        LOGGER.warn("Caught Exception while trying to load properties", e);
+      }
+    } else {
+      try {
+        InputStream propertiesStream =
+            this.getClass().getClassLoader().getResourceAsStream(TASKANA_OUTBOX_PROPERTIES);
+
+        outboxProperties.load(propertiesStream);
+
+        LOGGER.debug(
+            "Outbox properties were loaded from file {} from classpath.",
+            TASKANA_OUTBOX_PROPERTIES);
+
+      } catch (IOException e) {
+        LOGGER.warn("Caught Exception while trying to load properties", e);
+      }
     }
   }
 
