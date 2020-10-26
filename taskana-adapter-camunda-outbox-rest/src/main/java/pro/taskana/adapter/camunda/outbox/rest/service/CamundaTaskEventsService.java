@@ -82,17 +82,17 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
 
   static {
     try {
-      Properties properties = getProperties();
       if (maxNumberOfEventsReturned == 0) {
         String maxNumberOfEventsString =
-            properties.getProperty(TASKANA_ADAPTER_OUTBOX_MAX_NUMBER_OF_EVENTS);
+
+            ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_MAX_NUMBER_OF_EVENTS);
         if (maxNumberOfEventsString != null && !maxNumberOfEventsString.isEmpty()) {
           maxNumberOfEventsReturned = Integer.parseInt(maxNumberOfEventsString);
         } else {
           maxNumberOfEventsReturned = MAX_NUMBER_OF_EVENTS_DEFAULT;
         }
       }
-    } catch (IOException | NumberFormatException e) {
+    } catch (NumberFormatException e) {
       if (maxNumberOfEventsReturned == 0) {
         maxNumberOfEventsReturned = MAX_NUMBER_OF_EVENTS_DEFAULT;
       }
@@ -174,7 +174,6 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
       JsonNode errorLog = OBJECT_MAPPER.readTree(eventIdAndErrorLog).get("errorLog");
 
       Instant blockedUntil = getBlockedUntil();
-
       preparedStatement.setTimestamp(1, Timestamp.from(blockedUntil));
       preparedStatement.setString(2, errorLog.asText());
       preparedStatement.setInt(3, id.asInt());
@@ -398,7 +397,7 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
         Duration.parse(
             ReadPropertiesHelper.getInstance()
                 .getProperty(TASKANA_ADAPTER_OUTBOX_DURATION_BETWEEN_TASK_CREATION_RETRIES));
-
+    
     return Instant.now().plus(blockedDuration);
   }
 
@@ -539,8 +538,8 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
 
   private DataSource getDataSourceFromPropertiesFile() {
     try {
-      Properties properties = getProperties();
-      String jndiUrl = properties.getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_JNDI);
+
+      String jndiUrl = ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_JNDI);
 
       if (jndiUrl != null) {
         dataSource = (DataSource) new InitialContext().lookup(jndiUrl);
@@ -549,31 +548,19 @@ public class CamundaTaskEventsService implements TaskanaConfigurationProperties 
 
         dataSource =
             createDatasource(
-                properties.getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_DRIVER),
-                properties.getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_URL),
-                properties.getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_USERNAME),
-                properties.getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_PASSWORD));
+                ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_DRIVER),
+                ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_URL),
+                ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_USERNAME),
+                ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_PASSWORD));
       }
 
-    } catch (IOException | NamingException | NullPointerException e) {
+    } catch (NamingException | NullPointerException e) {
       LOGGER.warn(
           "Caught {} while trying to retrieve the datasource from the provided properties file",
           e.getClass().getName());
     }
 
     return dataSource;
-  }
-
-  private static Properties getProperties() throws IOException {
-    if (outboxProperties == null) {
-      InputStream propertiesInputStream =
-          CamundaTaskEventsService.class
-              .getClassLoader()
-              .getResourceAsStream(TASKANA_OUTBOX_PROPERTIES);
-      outboxProperties = new Properties();
-      outboxProperties.load(propertiesInputStream);
-    }
-    return outboxProperties;
   }
 
   private static String getSchemaFromProperties() {
