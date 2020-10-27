@@ -32,12 +32,11 @@ import pro.taskana.adapter.camunda.TaskanaConfigurationProperties;
 import pro.taskana.adapter.camunda.dto.ReferencedTask;
 import pro.taskana.adapter.camunda.dto.VariableValueDto;
 import pro.taskana.adapter.camunda.mapper.JacksonConfigurator;
-import pro.taskana.adapter.camunda.util.ReadPropertiesHelper;
 
 /**
  * This class is responsible for dealing with events within the lifecycle of a camunda user task.
  */
-public class TaskanaTaskListener implements TaskListener, TaskanaConfigurationProperties {
+public class TaskanaTaskListener implements TaskListener {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TaskanaTaskListener.class);
   private static final String TASK_STATE_COMPLETED = "COMPLETED";
@@ -172,8 +171,7 @@ public class TaskanaTaskListener implements TaskListener, TaskanaConfigurationPr
   private void setOutboxSchema(Connection connection) throws SQLException {
 
     if (outboxSchemaName == null) {
-      outboxSchemaName =
-          ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_SCHEMA);
+      outboxSchemaName = TaskanaConfigurationProperties.getOutboxSchema();
     }
 
     outboxSchemaName =
@@ -197,10 +195,7 @@ public class TaskanaTaskListener implements TaskListener, TaskanaConfigurationPr
 
       Timestamp eventCreationTimestamp = Timestamp.from(Instant.now());
 
-      int initialRetries =
-          Integer.parseInt(
-              ReadPropertiesHelper.getInstance()
-                  .getProperty(TASKANA_ADAPTER_OUTBOX_INITIAL_NUMBER_OF_TASK_CREATION_RETRIES));
+      int initialRetries = TaskanaConfigurationProperties.getInitialNumberOfTaskCreationRetries();
 
       preparedStatement.setString(1, delegateTask.getEventName());
       preparedStatement.setTimestamp(2, eventCreationTimestamp);

@@ -19,14 +19,12 @@ import pro.taskana.adapter.camunda.TaskanaConfigurationProperties;
 import pro.taskana.adapter.camunda.exceptions.SystemException;
 import pro.taskana.adapter.camunda.schemacreator.DB;
 import pro.taskana.adapter.camunda.schemacreator.TaskanaOutboxSchemaCreator;
-import pro.taskana.adapter.camunda.util.ReadPropertiesHelper;
 
 /**
  * Camunda engine plugin responsible for adding the TaskanaParseListener to the
  * ProcessEngineConfguration, as well as initializing the outbox tables.
  */
-public class TaskanaParseListenerProcessEnginePlugin extends AbstractProcessEnginePlugin
-    implements TaskanaConfigurationProperties {
+public class TaskanaParseListenerProcessEnginePlugin extends AbstractProcessEnginePlugin {
 
   private static final String OUTBOX_SCHEMA_VERSION = "1.0.0";
   private static final Logger LOGGER =
@@ -82,7 +80,7 @@ public class TaskanaParseListenerProcessEnginePlugin extends AbstractProcessEngi
 
     boolean isSchemaPreexisting = schemaCreator.isSchemaPreexisting();
 
-    boolean shouldSchemaBeCreated = isAutomatedSchemaCreationEnabled();
+    boolean shouldSchemaBeCreated = TaskanaConfigurationProperties.getCreateOutboxSchema();
 
     if (!isSchemaPreexisting && shouldSchemaBeCreated) {
 
@@ -113,28 +111,11 @@ public class TaskanaParseListenerProcessEnginePlugin extends AbstractProcessEngi
     }
   }
 
-  private boolean isAutomatedSchemaCreationEnabled() {
-
-    boolean createSchema = true;
-
-    String createSchemaProperty =
-        ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_CREATE_OUTBOX_SCHEMA);
-
-    if (createSchemaProperty != null && "false".equalsIgnoreCase(createSchemaProperty)) {
-      createSchema = false;
-    }
-
-    return createSchema;
-  }
-
   private String initSchemaName(DataSource dataSource) {
 
-    String outboxSchema =
-        ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_SCHEMA);
+    String outboxSchema = TaskanaConfigurationProperties.getOutboxSchema();
     outboxSchema =
-        (outboxSchema == null || outboxSchema.isEmpty())
-            ? TASKANA_OUTBOX_DEFAULT_SCHEMA
-            : outboxSchema;
+        (outboxSchema == null || outboxSchema.isEmpty()) ? "taskana_tables" : outboxSchema;
 
     try (Connection connection = dataSource.getConnection()) {
       String databaseProductName = connection.getMetaData().getDatabaseProductName();
@@ -178,8 +159,7 @@ public class TaskanaParseListenerProcessEnginePlugin extends AbstractProcessEngi
   private DataSource getDataSourceFromPropertiesFile() {
     DataSource dataSource = null;
     try {
-      String jndiLookup =
-          ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_JNDI);
+      String jndiLookup = TaskanaConfigurationProperties.getOutboxDatasourceJndi();
 
       if (jndiLookup != null) {
         dataSource = (DataSource) new InitialContext().lookup(jndiLookup);
@@ -189,17 +169,10 @@ public class TaskanaParseListenerProcessEnginePlugin extends AbstractProcessEngi
           LOGGER.info("jndi lookup {} didn't return a Datasource.", jndiLookup);
         }
       } else {
-        String driver =
-            ReadPropertiesHelper.getInstance()
-                .getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_DRIVER);
-        String jdbcUrl =
-            ReadPropertiesHelper.getInstance().getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_URL);
-        String userName =
-            ReadPropertiesHelper.getInstance()
-                .getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_USERNAME);
-        String password =
-            ReadPropertiesHelper.getInstance()
-                .getProperty(TASKANA_ADAPTER_OUTBOX_DATASOURCE_PASSWORD);
+        String driver = TaskanaConfigurationProperties.getOutboxDatasourceDriver();
+        String jdbcUrl = TaskanaConfigurationProperties.getOutboxDatasourceUrl();
+        String userName = TaskanaConfigurationProperties.getOutboxDatasourceUsername();
+        String password = TaskanaConfigurationProperties.getOutboxDatasourcePassword();
         dataSource = createDatasource(driver, jdbcUrl, userName, password);
         LOGGER.info("created Datasource from properties {}, ...", jdbcUrl);
       }
