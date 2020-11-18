@@ -304,16 +304,22 @@ public class TaskanaTaskListener implements TaskListener {
 
     VariableValueDto variableValueDto = new VariableValueDto();
 
+    Class<?> processVariableClass = processVariable.getClass();
+
     String type = "Object";
 
     Map<String, Object> valueInfo = new HashMap<>();
     valueInfo.put("objectTypeName", processVariable.getClass());
 
-    if (processVariable.getClass().isPrimitive()
-        || isPrimitiveWrapper((processVariable.getClass()))
-            && !processVariable.getClass().getTypeName().equals("String")) {
+    if (processVariableClass.isPrimitive() || isPrimitiveWrapper(processVariableClass)) {
 
-      type = processVariable.getClass().getSimpleName();
+      type = processVariableClass.getSimpleName();
+
+      variableValueDto.setType(type);
+      variableValueDto.setValue(processVariable);
+      variableValueDto.setValueInfo(valueInfo);
+
+    } else if (processVariableClass.isAssignableFrom(String.class)) {
 
       variableValueDto.setType(type);
       variableValueDto.setValue(processVariable);

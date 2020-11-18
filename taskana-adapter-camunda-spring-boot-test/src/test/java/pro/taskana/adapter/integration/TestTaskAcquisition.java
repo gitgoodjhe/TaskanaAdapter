@@ -159,8 +159,8 @@ class TestTaskAcquisition extends AbsIntegrationTest {
           throws Exception {
 
     String variables =
-        "\"variables\": {\"amount\": {\"value\":555, "
-            + "\"type\":\"long\"},\"item\": {\"value\": \"item-xyz\"}}";
+        "\"variables\": {\"int\": {\"value\":555, "
+            + "\"type\":\"integer\"},\"double\": {\"value\": 1.111,\"type\":\"double\"},\"boolean\": {\"value\": true,\"type\":\"boolean\"}}";
     String processInstanceId =
         this.camundaProcessengineRequester.startCamundaProcessAndReturnId(
             "simple_user_task_process", variables);
@@ -170,25 +170,62 @@ class TestTaskAcquisition extends AbsIntegrationTest {
     Thread.sleep((long) (this.adapterTaskPollingInterval * 1.2));
 
     String expectedPrimitiveVariable1 =
-        "{\"type\":\"Long\",\"value\":555,\"valueInfo\":"
-            + "{\"objectTypeName\":\"java.lang.Long\"}}";
-
+        "{\"type\":\"Integer\",\"value\":555,\"valueInfo\":"
+            + "{\"objectTypeName\":\"java.lang.Integer\"}}";
     String expectedPrimitiveVariable2 =
-        "{\"type\":\"Object\","
-            + "\"value\":\"\\\"item-xyz\\\"\","
-            + "\"valueInfo\":{\"objectTypeName\":\"java.lang.String\","
-            + "\"serializationDataFormat\":\"application/json\"}}";
+        "{\"type\":\"Double\",\"value\":1.111,\"valueInfo\":"
+            + "{\"objectTypeName\":\"java.lang.Double\"}}";
+    String expectedPrimitiveVariable3 =
+        "{\"type\":\"Boolean\",\"value\":true,\"valueInfo\":"
+            + "{\"objectTypeName\":\"java.lang.Boolean\"}}";
 
     camundaTaskIds.forEach(
         camundaTaskId -> {
           Map<String, String> customAttributes =
               retrieveCustomAttributesFromNewTaskanaTask(camundaTaskId);
+
           assertThat(
               expectedPrimitiveVariable1,
-              SameJSONAs.sameJSONAs(customAttributes.get("camunda:amount")));
+              SameJSONAs.sameJSONAs(customAttributes.get("camunda:int")));
           assertThat(
               expectedPrimitiveVariable2,
-              SameJSONAs.sameJSONAs(customAttributes.get("camunda:item")));
+              SameJSONAs.sameJSONAs(customAttributes.get("camunda:double")));
+          assertThat(
+              expectedPrimitiveVariable3,
+              SameJSONAs.sameJSONAs(customAttributes.get("camunda:boolean")));
+        });
+  }
+
+  @WithAccessId(
+      user = "teamlead_1",
+      groups = {"taskadmin"})
+  @Test
+  void
+      should_CreateTaskanaTaskWithStringProcessVariable_When_CamundaTaskWithStringProcessVariableCreated()
+          throws Exception {
+
+    String variables = "\"variables\":{\"item\": {\"value\": \"item-xyz\"}}";
+
+    String processInstanceId =
+        this.camundaProcessengineRequester.startCamundaProcessAndReturnId(
+            "simple_user_task_process", variables);
+    List<String> camundaTaskIds =
+        this.camundaProcessengineRequester.getTaskIdsFromProcessInstanceId(processInstanceId);
+
+    Thread.sleep((long) (this.adapterTaskPollingInterval * 1.2));
+
+    String expectedStringVariable =
+        "{\"type\":\"Object\","
+            + "\"value\":\"item-xyz\","
+            + "\"valueInfo\":{\"objectTypeName\":\"java.lang.String\"}}";
+
+    camundaTaskIds.forEach(
+        camundaTaskId -> {
+          Map<String, String> customAttributes =
+              retrieveCustomAttributesFromNewTaskanaTask(camundaTaskId);
+
+          assertThat(
+              expectedStringVariable, SameJSONAs.sameJSONAs(customAttributes.get("camunda:item")));
         });
   }
 
