@@ -32,6 +32,7 @@ import pro.taskana.adapter.camunda.CamundaListenerConfiguration;
 import pro.taskana.adapter.camunda.dto.ReferencedTask;
 import pro.taskana.adapter.camunda.dto.VariableValueDto;
 import pro.taskana.adapter.camunda.mapper.JacksonConfigurator;
+import pro.taskana.common.api.exceptions.SystemException;
 
 /**
  * This class is responsible for dealing with events within the lifecycle of a camunda user task.
@@ -87,13 +88,14 @@ public class TaskanaTaskListener implements TaskListener {
           break;
       }
 
-    } catch (Exception e) {
-      LOGGER.warn("Caught Exception while trying to process a delegate task", e);
+    } catch (SQLException | JsonProcessingException e) {
+      LOGGER.warn("Unexpected Exception while trying to process a delegate task", e);
+      throw new SystemException("Caught Exception while trying to process a delegate task", e);
     }
   }
 
   private void insertCreateEventIntoOutbox(DelegateTask delegateTask, Connection connection)
-      throws SQLException {
+      throws SQLException, JsonProcessingException {
 
     String camundaSchema = null;
 
@@ -107,14 +109,6 @@ public class TaskanaTaskListener implements TaskListener {
       setOutboxSchema(connection);
 
       prepareAndExecuteStatement(connection, delegateTask, referencedTaskJson);
-
-    } catch (JsonProcessingException e) {
-
-      LOGGER.warn(
-          "Caught JsonProcessingException while trying to convert ReferencedTask to JSON-String");
-    } catch (Exception e) {
-      LOGGER.warn(
-          "Caught Exception while trying to insert a \"create\" event into the outbox table", e);
 
     } finally {
       if (camundaSchema != null) {
@@ -150,12 +144,6 @@ public class TaskanaTaskListener implements TaskListener {
       setOutboxSchema(connection);
       prepareAndExecuteStatement(connection, delegateTask, payload);
       connection.setSchema(camundaSchema);
-    } catch (Exception e) {
-      LOGGER.warn(
-          String.format(
-              "Caught exception while trying to insert a %s event into the outbox table",
-              delegateTask.getEventName()),
-          e);
     } finally {
       if (camundaSchema != null) {
         connection.setSchema(camundaSchema);
@@ -188,7 +176,7 @@ public class TaskanaTaskListener implements TaskListener {
   }
 
   private void prepareAndExecuteStatement(
-      Connection connection, DelegateTask delegateTask, String payloadJson) {
+      Connection connection, DelegateTask delegateTask, String payloadJson) throws SQLException {
 
     try (PreparedStatement preparedStatement =
         connection.prepareStatement(SQL_INSERT_EVENT, Statement.RETURN_GENERATED_KEYS)) {
@@ -205,10 +193,6 @@ public class TaskanaTaskListener implements TaskListener {
       preparedStatement.setString(6, delegateTask.getId());
 
       preparedStatement.execute();
-
-    } catch (Exception e) {
-
-      LOGGER.warn("Caught Exception while trying to prepare and execute statement", e);
     }
   }
 
