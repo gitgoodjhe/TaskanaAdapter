@@ -4,8 +4,6 @@
     <bpmn:extensionElements>
       <camunda:properties>
         <camunda:property name="taskana.domain" value="DOMAIN_A" />
-        <camunda:property name="taskana-attributes" value="amount,item" />
-        <camunda:property name="taskana.workbasket-key" value="someWbkey" />
       </camunda:properties>
     </bpmn:extensionElements>
     <bpmn:startEvent id="StartEvent_1" name="Request Received">
