@@ -14,6 +14,6 @@ public class ExampleTaskRouter implements TaskRoutingProvider {
 
   @Override
   public String determineWorkbasketId(Task task) {
-    return "WBI:100000000000000000000000000000000001";
+    return "WBI:100000000000000000000000000000000002";
   }
 }

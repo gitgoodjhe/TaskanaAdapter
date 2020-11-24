@@ -74,6 +74,7 @@
       <version>${version.resteasy.spring.boot}</version>
     </dependency>
 
+
   </dependencies>
 
 

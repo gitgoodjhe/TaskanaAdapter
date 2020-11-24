@@ -107,7 +107,7 @@
                 <module>taskana-adapter-camunda-wildfly-example</module>
                 <module>taskana-adapter-camunda-spring-boot-test</module>
                 <module>camunda-outbox-example-boot</module>
-          <module>camunda-2</module>
+                <module>camunda-outbox-example-boot-2</module>
         </modules>
 
         <repositories>

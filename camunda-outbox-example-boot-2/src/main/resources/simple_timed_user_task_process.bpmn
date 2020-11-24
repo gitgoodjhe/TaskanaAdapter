@@ -15,7 +15,7 @@
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="SequenceFlow_1a4uckm" sourceRef="Task_0k5trao" targetRef="EndEvent_0lef4tl" />
     <bpmn:sequenceFlow id="SequenceFlow_1wir7ao" sourceRef="StartEvent_1" targetRef="Task_0k5trao" />
-    <bpmn:userTask id="Task_0k5trao" name="Check Request">
+    <bpmn:userTask id="Task_0k5trao" name="TimedUsertaskCamunda2">
       <bpmn:extensionElements>
         <camunda:properties>
           <camunda:property name="taskana.classification-key" value="T2000" />
@@ -34,15 +34,30 @@
       <bpmn:incoming>SequenceFlow_04a00sf</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="SequenceFlow_04a00sf" sourceRef="BoundaryEvent_1csaz2y" targetRef="EndEvent_16if32i" />
-    <bpmn:userTask id="UserTask_1dtimrz" name="UserTask1">
+    <bpmn:userTask id="UserTask_1dtimrz" name="UserTask1Camunda2">
       <bpmn:extensionElements>
         <camunda:properties>
           <camunda:property name="taskana.classification-key" value="L1050" />
         </camunda:properties>
       </bpmn:extensionElements>
       <bpmn:incoming>SequenceFlow_18u9lze</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_1nggbr6</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:sequenceFlow id="SequenceFlow_18u9lze" sourceRef="StartEvent_1" targetRef="UserTask_1dtimrz" />
+    <bpmn:sequenceFlow id="SequenceFlow_1nggbr6" sourceRef="UserTask_1dtimrz" targetRef="Task_0v387xq" />
+    <bpmn:userTask id="Task_0v387xq" name="UserTask2Camunda2">
+      <bpmn:extensionElements>
+        <camunda:properties>
+          <camunda:property name="taskana.classification-key" value="L1050" />
+        </camunda:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_1nggbr6</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_17dcmr1</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="EndEvent_0nuckna" name="Request Processed">
+      <bpmn:incoming>SequenceFlow_17dcmr1</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_17dcmr1" sourceRef="Task_0v387xq" targetRef="EndEvent_0nuckna" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="simple_timed_user_task_process">
@@ -91,6 +106,23 @@
         <di:waypoint x="229" y="120" />
         <di:waypoint x="229" y="350" />
         <di:waypoint x="248" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_1nggbr6_di" bpmnElement="SequenceFlow_1nggbr6">
+        <di:waypoint x="348" y="350" />
+        <di:waypoint x="420" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="UserTask_07gh9cy_di" bpmnElement="Task_0v387xq">
+        <dc:Bounds x="420" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_0nuckna_di" bpmnElement="EndEvent_0nuckna">
+        <dc:Bounds x="582" y="332" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="575" y="375" width="52" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_17dcmr1_di" bpmnElement="SequenceFlow_17dcmr1">
+        <di:waypoint x="520" y="350" />
+        <di:waypoint x="582" y="350" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>camunda-2</artifactId>
+  <artifactId>camunda-outbox-example-boot-2</artifactId>
 
 
   <dependencies>
