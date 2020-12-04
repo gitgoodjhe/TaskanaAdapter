@@ -188,7 +188,7 @@ class TestCompletedTaskRetrieval extends AbsIntegrationTest {
 
     newProcessVariables.put(
         "camunda:attribute1",
-        "{\"type\":\"Object\","
+        "{\"type\":\"object\","
             + "\"value\":\"{\\\"stringField\\\":\\\"\\\\fForm feed \\\\b Backspace \\\\t Tab "
             + "\\\\\\\\Backslash \\\\n newLine \\\\r Carriage return \\\\\\\" DoubleQuote\\\","
             + "\\\"intField\\\":1,\\\"doubleField\\\":1.1,\\\"booleanField\\\":false,"
